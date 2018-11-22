@@ -1,0 +1,1 @@
+-d none -s -R vendor. -R \.$ -- go run server.go

@@ -2,27 +2,29 @@ package main
 
 import (
 	"cryptoplay/web"
-	"html/template"
-	"io"
+	"fmt"
+	"time"
 
+	"github.com/foolin/echo-template"
 	"github.com/labstack/echo"
+	"github.com/vjeantet/jodaTime"
 )
 
-type Template struct {
-	templates *template.Template
-}
-
-func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
 func main() {
+	port := "1323"
 	echoFramework := echo.New()
+	echoFramework.Static("/assets", "app/public/assets")
 	echoFramework.Debug = true
-	renderer := &Template{
-		templates: template.Must(template.ParseGlob("public/views/*")),
-	}
-	echoFramework.Renderer = renderer
+	echoFramework.Renderer = echotemplate.New(echotemplate.TemplateConfig{
+		Root:         "app/views",
+		Extension:    ".tpl",
+		Master:       "layouts/master",
+		DisableCache: true,
+	})
+
 	web.Routing(echoFramework)
-	echoFramework.Logger.Fatal(echoFramework.Start(":1323"))
+
+	fmt.Println("------------------")
+	fmt.Println(jodaTime.Format("H:m:s", time.Now()))
+	echoFramework.Logger.Fatal(echoFramework.Start(":" + port))
 }
