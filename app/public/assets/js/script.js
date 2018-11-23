@@ -1,13 +1,42 @@
 const CRYPTO_DATA = 10
 
-var btcChart = null;
-var ltcChart = null;
+var BTC = {
+    slug: 'btc',
+    id: "BTCChart",
+    json: [],
+    time: [],
+    sell: [],
+    buy: [],
+    last: null,
+    chart: null,
+    chartTitle: "BTC - PLN",
+    amount: {
+        min: "#btc-amount-min",
+        max: "#btc-amount-max"
+    }
+}
+var LTC = {
+    slug: 'ltc',
+    id: "LTCChart",
+    json: [],
+    time: [],
+    sell: [],
+    buy: [],
+    last: null,
+    chart: null,
+    chartTitle: "LTC - PLN",
+    amount: {
+        min: "#ltc-amount-min",
+        max: "#ltc-amount-max"
+    }
+}
+
 
 $(document).ready(function () {
     timer()
-    BTCGenerator();
-    LTCGenerator();
-
+    ChartGenerator(BTC);
+    ChartGenerator(LTC);
+    chartButtons();
 });
 
 function timer() {
@@ -19,34 +48,47 @@ function timer() {
         }
         $("#cryptoBar").attr("data-state", parseInt(state));
         $("#cryptoBar").css("width", parseInt(state) * 10 + "%")
-        console.log(state);
     }, 6000);
 }
 
+function chartButtons() {
+    $(".chart-button").on("click", function () {
+        var chartId = $(this).attr("data-chart");
+        var period = $(this).attr("data-period");
+        $("#" + chartId).attr("data-period", period);
+        var object = null;
+        if (BTC.id == chartId) {
+            object = BTC;
+        } else if (LTC.id == chartId) {
+            object = LTC;
+        }
+        updateCryptoChart(object);
+    })
+}
 
-function BTCGenerator() {
+function ChartGenerator(cryptoObject) {
 
-    var BTClineChartData = {
-        labels: BTC.time,
+    var chartOptions = {
+        labels: cryptoObject.time,
         datasets: [{
             label: 'Kwota sprzedaży',
             borderColor: "blue",
             backgroundColor: "blue",
             fill: false,
-            data: BTC.sell
+            data: cryptoObject.sell
         }, {
             label: 'Kwota kupna',
             borderColor: "red",
             backgroundColor: "red",
             fill: false,
-            data: BTC.buy
+            data: cryptoObject.buy
         }]
     };
 
-    var ctx = document.getElementById("BTCChart").getContext('2d');
-    btcChart = new Chart(ctx, {
+    var ctx = document.getElementById(cryptoObject.id).getContext('2d');
+    cryptoObject.chart = new Chart(ctx, {
         type: 'line',
-        data: BTClineChartData,
+        data: chartOptions,
         options: {
             responsive: true,
             hoverMode: 'index',
@@ -58,88 +100,63 @@ function BTCGenerator() {
         }
     });
 
-    updateCrypto("btc", btcChart, "90m", false, true, BTC);
+    updateCryptoChart(cryptoObject);
+    updateCryptoAmount(cryptoObject);
     setInterval(function () {
-        updateCrypto("btc", btcChart, "90m", false, true, BTC);
+        updateCryptoChart(cryptoObject);
+        updateCryptoAmount(cryptoObject);
     }, 60000);
-
 }
 
+function updateCryptoChart(cryptoObject) {
+    var period = $("#" + cryptoObject.id).attr("data-period");
+    console.log(period)
+    $.when(getMarket(cryptoObject.slug, period)).done(function (data) {
+        if (period == "90m") {
+            cryptoObject.json = JSON.parse(data).slice(-CRYPTO_DATA);
+        } else {
+            Object.keys(JSON.parse(data)).forEach(function (key) {
+                var currentKey = parseInt(key);
+                if (((currentKey + 1) % 9) == 0 || currentKey == 0) {
+                    cryptoObject.json.push(JSON.parse(data)[key]);
 
-function LTCGenerator() {
-
-    var LTClineChartData = {
-        labels: LTC.time,
-        datasets: [{
-            label: 'Kwota sprzedaży',
-            borderColor: "blue",
-            backgroundColor: "blue",
-            fill: false,
-            data: LTC.sell
-        }, {
-            label: 'Kwota kupna',
-            borderColor: "red",
-            backgroundColor: "red",
-            fill: false,
-            data: LTC.buy
-        }]
-    };
-
-    var ctx = document.getElementById("LTCChart").getContext('2d');
-    ltcChart = new Chart(ctx, {
-        type: 'line',
-        data: LTClineChartData,
-        options: {
-            responsive: true,
-            hoverMode: 'index',
-            stacked: false,
-            title: {
-                display: true,
-                text: 'LTC - PLN'
-            }
+                }
+            });
         }
-    });
-
-    updateCrypto("ltc", ltcChart, "90m", false, true, LTC);
-    setInterval(function () {
-        updateCrypto("ltc", ltcChart, "90m", false, true, LTC);
-    }, 60000);
-
-}
-
-function updateCrypto(crypto, chart, periot, date, hour, cryptoObject) {
-    $.when(getMarket(crypto, periot)).done(function (data) {
-        cryptoObject.json = JSON.parse(data).slice(-CRYPTO_DATA);
         moment.locale('pl');
-        var dateFormat = (date == true) ? "L " : " ";
-        dateFormat += (hour == true) ? "LT " : " ";
+        var dateFormat = "";
+        switch (period) {
+            case "90m":
+                dateFormat = "LT"
+                break;
+            case "1d":
+                dateFormat = "L LT"
+                break;
+            default:
+                dateFormat = "L"
+                break;
+        }
         for (i = 0; i < CRYPTO_DATA; i++) {
             cryptoObject.time[i] = moment.unix(cryptoObject.json[i].time).format(dateFormat);
             cryptoObject.sell[i] = parseInt(cryptoObject.json[i].low);
             cryptoObject.buy[i] = parseInt(cryptoObject.json[i].high);
         }
-        chart.update();
+        cryptoObject.chart.update();
     });
 }
 
-function getMarket(type, periot) {
+function updateCryptoAmount(cryptoObject) {
+    $.when(getMarket(cryptoObject.slug, "90m")).done(function (data) {
+        cryptoObject.last = JSON.parse(data)[89];
+        $(cryptoObject.amount.min).text(parseInt(cryptoObject.last.low));
+        $(cryptoObject.amount.max).text(parseInt(cryptoObject.last.high));
+    });
+}
 
+function getMarket(type, period) {
     return $.ajax({
-        url: "http://localhost:1323/market/" + type + "/" + periot,
+        url: "http://localhost:1323/market/" + type + "/" + period,
         method: "GET",
         dataType: "json",
     });
-}
-
-var BTC = {
-    json: null,
-    time: [],
-    sell: [],
-    buy: []
-}
-var LTC = {
-    json: null,
-    time: [],
-    sell: [],
-    buy: []
 }
