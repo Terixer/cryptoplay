@@ -1,5 +1,5 @@
 const CRYPTO_DATA = 10
-
+const TIMER_ID = "cryptoBar";
 var BTC = {
     slug: 'btc',
     id: "BTCChart",
@@ -11,8 +11,8 @@ var BTC = {
     chart: null,
     chartTitle: "BTC - PLN",
     amount: {
-        min: "#btc-amount-min",
-        max: "#btc-amount-max"
+        min: "#btc-price-sell",
+        max: "#btc-price-buy"
     }
 }
 var LTC = {
@@ -26,43 +26,59 @@ var LTC = {
     chart: null,
     chartTitle: "LTC - PLN",
     amount: {
-        min: "#ltc-amount-min",
-        max: "#ltc-amount-max"
+        min: "#ltc-price-sell",
+        max: "#ltc-price-buy"
     }
 }
 
 
 $(document).ready(function () {
-    timer()
+    timer(TIMER_ID);
     ChartGenerator(BTC);
     ChartGenerator(LTC);
-    chartButtons();
+    chartButtons([BTC, LTC]);
 });
 
-function timer() {
+function timer(id) {
+    var cryptoBar = $("#" + id);
     setInterval(function () {
-        var state = parseInt($("#cryptoBar").attr("data-state"));
-        state += 1;
-        if (state == 10) {
-            state = 0
+
+        var state = parseFloat(cryptoBar.attr("data-state"));
+        if (state <= 60) {
+            state += 1;
+            if (state <= 30) {
+                cryptoBar.removeClass("bg-danger");
+                cryptoBar.addClass("bg-info");
+            } else if (state <= 50) {
+                cryptoBar.removeClass("bg-info");
+                cryptoBar.addClass("bg-warning");
+            } else {
+                cryptoBar.removeClass("bg-warning");
+                cryptoBar.addClass("bg-danger");
+            }
+            cryptoBar.text((60 - state) + "s");
+            cryptoBar.attr("data-state", parseFloat(state));
+            cryptoBar.css("width", parseFloat(state) / 60 * 100 + "%")
         }
-        $("#cryptoBar").attr("data-state", parseInt(state));
-        $("#cryptoBar").css("width", parseInt(state) * 10 + "%")
-    }, 6000);
+
+    }, 1000);
 }
 
-function chartButtons() {
+function chartButtons(cryptoObjects) {
     $(".chart-button").on("click", function () {
         var chartId = $(this).attr("data-chart");
+        $(".chart-button[data-chart=" + chartId + "]").removeClass("active");
+        $(this).addClass("active");
         var period = $(this).attr("data-period");
         $("#" + chartId).attr("data-period", period);
         var object = null;
-        if (BTC.id == chartId) {
-            object = BTC;
-        } else if (LTC.id == chartId) {
-            object = LTC;
+        for (var i = 0; i < cryptoObjects.length; i++) {
+            if (cryptoObjects[i].id == chartId) {
+                object = cryptoObjects[i]
+            }
         }
-        updateCryptoChart(object);
+
+        updateChartAmountTimer(object);
     })
 }
 
@@ -100,15 +116,20 @@ function ChartGenerator(cryptoObject) {
         }
     });
 
+    updateChartAmountTimer(cryptoObject);
+    setInterval(function () {
+        updateChartAmountTimer(cryptoObject);
+    }, 60 * 1000);
+}
+
+function updateChartAmountTimer(cryptoObject) {
     updateCryptoChart(cryptoObject);
     updateCryptoAmount(cryptoObject);
-    setInterval(function () {
-        updateCryptoChart(cryptoObject);
-        updateCryptoAmount(cryptoObject);
-    }, 60000);
+    resetTimer(TIMER_ID);
 }
 
 function updateCryptoChart(cryptoObject) {
+    cryptoObject.json = [];
     var period = $("#" + cryptoObject.id).attr("data-period");
     console.log(period)
     $.when(getMarket(cryptoObject.slug, period)).done(function (data) {
@@ -123,6 +144,7 @@ function updateCryptoChart(cryptoObject) {
                 }
             });
         }
+        console.log(cryptoObject.json);
         moment.locale('pl');
         var dateFormat = "";
         switch (period) {
@@ -145,6 +167,10 @@ function updateCryptoChart(cryptoObject) {
     });
 }
 
+function resetTimer(id) {
+    $("#" + id).attr("data-state", 0);
+}
+
 function updateCryptoAmount(cryptoObject) {
     $.when(getMarket(cryptoObject.slug, "90m")).done(function (data) {
         cryptoObject.last = JSON.parse(data)[89];
@@ -154,8 +180,10 @@ function updateCryptoAmount(cryptoObject) {
 }
 
 function getMarket(type, period) {
+    var url = "http://localhost:1323/market/" + type + "/" + period;
+    console.log(url);
     return $.ajax({
-        url: "http://localhost:1323/market/" + type + "/" + period,
+        url: url,
         method: "GET",
         dataType: "json",
     });
