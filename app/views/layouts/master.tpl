@@ -9,12 +9,20 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
     <script src="https://momentjs.com/downloads/moment-with-locales.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@7.29.1/dist/sweetalert2.all.min.js"></script>
     <script src="/assets/js/script.js"></script>
         <title>{{.title}}</title>
         {{template "head" .}}
     </head>
 
     <body>
+        <style>
+            .hide{
+                display:none !important;
+            }
+        </style>
+        {{include "layouts/navbar"}}
         {{template "content" .}}
         <hr>
         {{include "layouts/footer"}}

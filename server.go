@@ -18,7 +18,8 @@ var db *sql.DB
 
 func main() {
 	db, _ = sql.Open("sqlite3", "./database/main.db")
-	CreateTables()
+	createTables()
+	addDefaultData()
 	controllers.DB = db
 	port := "1323"
 	echoFramework := echo.New()
@@ -38,8 +39,17 @@ func main() {
 	echoFramework.Logger.Fatal(echoFramework.Start(":" + port))
 }
 
-func CreateTables() {
-	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS `userinfo` (`uid` INTEGER PRIMARY KEY AUTOINCREMENT,`username` VARCHAR(64) NULL, `departname` VARCHAR(64) NULL, `created` DATE NULL);")
+func createTables() {
+	drop, err := db.Prepare("DROP TABLE `transactions`")
 	helpers.CheckErr(err)
-	statement.Exec()
+	drop.Exec()
+	transactions, err := db.Prepare("CREATE TABLE IF NOT EXISTS `transactions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT,`value` FLOAT, `coin` VARCHAR(64), `coin_amount` FLOAT,`transaction_type` VARCHAR(64));")
+	helpers.CheckErr(err)
+	transactions.Exec()
+}
+func addDefaultData() {
+	transactions, err := db.Prepare("INSERT INTO transactions(value, coin, coin_amount, transaction_type) values(?,?,?,?)")
+	helpers.CheckErr(err)
+	_, err = transactions.Exec("50000", "", "", "default")
+	helpers.CheckErr(err)
 }

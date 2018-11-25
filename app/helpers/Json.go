@@ -1,13 +1,11 @@
 package helpers
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
 func GetJsonFromUrl(url string) string {
-	fmt.Printf("HTML code of %s ...\n", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		panic(err)

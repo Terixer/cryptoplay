@@ -1,1 +1,1 @@
--d none -s -R vendor. -R \.$ -- go run server.go
+-d none -s -R vendor. -R \.go$ -- go run server.go
