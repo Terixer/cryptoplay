@@ -295,9 +295,9 @@ function checkTransactionAvailability(cryptoObject, futureMoney, futureCrypto) {
     var numberInput = $("#" + cryptoObject.form).find("input[type='number']");
     var transactionButton = $("#" + cryptoObject.form).find("button");
     if (futureMoney < 0 || futureCrypto < 0 || isNaN(parseFloat(numberInput.val())) || numberInput.val() == 0) {
-        transactionButton.addClass("disabled");
+        transactionButton.addClass("disabled").prop("disabled", true);;
     } else {
-        transactionButton.removeClass("disabled");
+        transactionButton.removeClass("disabled").prop("disabled", false);;
     }
 
 }

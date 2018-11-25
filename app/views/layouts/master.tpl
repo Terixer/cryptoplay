@@ -13,6 +13,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@7.29.1/dist/sweetalert2.all.min.js"></script>
     <script src="/assets/js/script.js"></script>
         <title>{{.title}}</title>
+
+    <link rel="icon" type="image/png" href="https://www.favicon.cc/logo3d/362479.png" />
         {{template "head" .}}
     </head>
 
